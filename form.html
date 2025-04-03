@@ -1,116 +1,118 @@
-<script>
-  let selectedId = null; // Store the ID of the record being edited
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS MySQL Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    form { max-width: 400px; margin: 0 auto; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { background-color: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; width: 100%; margin-bottom: 10px; }
+    button:hover { background-color: #45a049; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
 
-  function insertData() {
-    const name = document.getElementById('name').value;
-    const address = document.getElementById('address').value;
-    const phone = document.getElementById('phone').value;
+  <h1>AWS MySQL Form</h1>
+  
+  <form id="dataForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" required>
+    <label for="address">Address:</label>
+    <input type="text" id="address" required>
+    <label for="phone">Phone:</label>
+    <input type="tel" id="phone" required>
+    
+    <button type="button" id="insertBtn" onclick="insertData()">Insert</button>
+    <button type="button" id="updateBtn" onclick="updateData()" style="display:none;">Update</button>
+    <button type="button" onclick="listData()">List All</button>
+  </form>
 
-    fetch('/insert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, address, phone }),
-    })
-    .then(response => response.text())
-    .then(result => {
-      console.log(result);
-      document.getElementById('result').innerText = result;
-      resetForm();
-      listData();
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('result').innerText = 'Error inserting data';
-    });
-  }
+  <div id="result"></div>
+  <div id="listResult"></div>
 
-  function deleteData(id) {
-    fetch('/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    .then(response => response.text())
-    .then(result => {
-      console.log(result);
-      document.getElementById('result').innerText = result;
-      listData();
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('result').innerText = 'Error deleting data';
-    });
-  }
+  <script>
+    let selectedId = null;
 
-  function editData(id, name, address, phone) {
-    document.getElementById('name').value = name;
-    document.getElementById('address').value = address;
-    document.getElementById('phone').value = phone;
-    selectedId = id; // Store the selected record ID
-    document.getElementById('updateBtn').style.display = 'block';
-    document.getElementById('insertBtn').style.display = 'none';
-  }
+    function insertData() {
+      fetch('/insert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('name').value,
+          address: document.getElementById('address').value,
+          phone: document.getElementById('phone').value
+        }),
+      }).then(res => res.text()).then(result => {
+        document.getElementById('result').innerText = result;
+        resetForm();
+        listData();
+      });
+    }
 
-  function updateData() {
-    if (!selectedId) return;
+    function deleteData(id) {
+      fetch('/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      }).then(res => res.text()).then(result => {
+        document.getElementById('result').innerText = result;
+        listData();
+      });
+    }
 
-    const name = document.getElementById('name').value;
-    const address = document.getElementById('address').value;
-    const phone = document.getElementById('phone').value;
+    function editData(id, name, address, phone) {
+      document.getElementById('name').value = name;
+      document.getElementById('address').value = address;
+      document.getElementById('phone').value = phone;
+      selectedId = id;
+      document.getElementById('updateBtn').style.display = 'block';
+      document.getElementById('insertBtn').style.display = 'none';
+    }
 
-    fetch('/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: selectedId, name, address, phone }),
-    })
-    .then(response => response.text())
-    .then(result => {
-      console.log(result);
-      document.getElementById('result').innerText = result;
-      resetForm();
-      listData();
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('result').innerText = 'Error updating data';
-    });
-  }
+    function updateData() {
+      if (!selectedId) return;
+      fetch('/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedId,
+          name: document.getElementById('name').value,
+          address: document.getElementById('address').value,
+          phone: document.getElementById('phone').value
+        }),
+      }).then(res => res.text()).then(result => {
+        document.getElementById('result').innerText = result;
+        resetForm();
+        listData();
+      });
+    }
 
-  function resetForm() {
-    document.getElementById('dataForm').reset();
-    selectedId = null;
-    document.getElementById('updateBtn').style.display = 'none';
-    document.getElementById('insertBtn').style.display = 'block';
-  }
+    function resetForm() {
+      document.getElementById('dataForm').reset();
+      selectedId = null;
+      document.getElementById('updateBtn').style.display = 'none';
+      document.getElementById('insertBtn').style.display = 'block';
+    }
 
-  function listData() {
-    fetch('/list')
-    .then(response => response.json())
-    .then(data => {
-      console.log(data);
-      const listResultDiv = document.getElementById('listResult');
-      listResultDiv.innerHTML = '<h2>All Form Details</h2>';
-
-      if (data.length === 0) {
-        listResultDiv.innerHTML += '<p>No data available.</p>';
-      } else {
+    function listData() {
+      fetch('/list').then(res => res.json()).then(data => {
+        let listHtml = '<h2>All Records</h2>';
         data.forEach(row => {
-          listResultDiv.innerHTML += `
-            <div class="list-item">
-              <div>
-                <strong>Name:</strong> ${row.name}, 
-                <strong>Address:</strong> ${row.address}, 
-                <strong>Phone:</strong> ${row.phone}
-              </div>
-              <button type="button" onclick="editData(${row.id}, '${row.name}', '${row.address}', '${row.phone}')">Edit</button>
-              <button type="button" onclick="deleteData(${row.id})">Delete</button>
-            </div>`;
+          listHtml += `<div class="list-item">
+            <div><strong>Name:</strong> ${row.name}, <strong>Address:</strong> ${row.address}, <strong>Phone:</strong> ${row.phone}</div>
+            <button onclick="editData(${row.id}, '${row.name}', '${row.address}', '${row.phone}')">Edit</button>
+            <button onclick="deleteData(${row.id})">Delete</button>
+          </div>`;
         });
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('listResult').innerText = 'Error fetching data';
-    });
-  }
-</script>
+        document.getElementById('listResult').innerHTML = listHtml;
+      });
+    }
+  </script>
+
+</body>
+</html>
