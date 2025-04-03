@@ -1,159 +1,116 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AWS MySQL Form</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
+<script>
+  let selectedId = null; // Store the ID of the record being edited
 
-    h1 {
-      text-align: center;
-    }
+  function insertData() {
+    const name = document.getElementById('name').value;
+    const address = document.getElementById('address').value;
+    const phone = document.getElementById('phone').value;
 
-    form {
-      max-width: 400px;
-      margin: 0 auto;
-    }
+    fetch('/insert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, address, phone }),
+    })
+    .then(response => response.text())
+    .then(result => {
+      console.log(result);
+      document.getElementById('result').innerText = result;
+      resetForm();
+      listData();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('result').innerText = 'Error inserting data';
+    });
+  }
 
-    label {
-      display: block;
-      margin-bottom: 5px;
-    }
+  function deleteData(id) {
+    fetch('/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    .then(response => response.text())
+    .then(result => {
+      console.log(result);
+      document.getElementById('result').innerText = result;
+      listData();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('result').innerText = 'Error deleting data';
+    });
+  }
 
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-    }
+  function editData(id, name, address, phone) {
+    document.getElementById('name').value = name;
+    document.getElementById('address').value = address;
+    document.getElementById('phone').value = phone;
+    selectedId = id; // Store the selected record ID
+    document.getElementById('updateBtn').style.display = 'block';
+    document.getElementById('insertBtn').style.display = 'none';
+  }
 
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      margin-bottom: 10px;
-    }
+  function updateData() {
+    if (!selectedId) return;
 
-    button:hover {
-      background-color: #45a049;
-    }
+    const name = document.getElementById('name').value;
+    const address = document.getElementById('address').value;
+    const phone = document.getElementById('phone').value;
 
-    #result {
-      margin-top: 20px;
-    }
+    fetch('/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selectedId, name, address, phone }),
+    })
+    .then(response => response.text())
+    .then(result => {
+      console.log(result);
+      document.getElementById('result').innerText = result;
+      resetForm();
+      listData();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('result').innerText = 'Error updating data';
+    });
+  }
 
-    #listResult {
-      margin-top: 20px;
-    }
+  function resetForm() {
+    document.getElementById('dataForm').reset();
+    selectedId = null;
+    document.getElementById('updateBtn').style.display = 'none';
+    document.getElementById('insertBtn').style.display = 'block';
+  }
 
-    .list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-  </style>
-</head>
-<body>
-  <h1>AWS MySQL Form</h1>
-  
-  <form id="dataForm">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required>
+  function listData() {
+    fetch('/list')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      const listResultDiv = document.getElementById('listResult');
+      listResultDiv.innerHTML = '<h2>All Form Details</h2>';
 
-    <label for="address">Address:</label>
-    <input type="text" id="address" name="address" required>
-
-    <label for="phone">Phone Number:</label>
-    <input type="tel" id="phone" name="phone" required>
-
-    <button type="button" onclick="insertData()">Insert</button>
-    <button type="button" onclick="listData()">List All</button>
-  </form>
-
-  <div id="result"></div>
-  <div id="listResult"></div>
-
-  <script>
-    function insertData() {
-      const name = document.getElementById('name').value;
-      const address = document.getElementById('address').value;
-      const phone = document.getElementById('phone').value;
-
-      fetch('/insert', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, address, phone }),
-      })
-      .then(response => response.text())
-      .then(result => {
-        console.log(result);
-        document.getElementById('result').innerText = result;
-        listData(); // Refresh the list after insertion
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('result').innerText = 'Error inserting data';
-      });
-    }
-
-    function deleteData(name) {
-      fetch('/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name }),
-      })
-      .then(response => response.text())
-      .then(result => {
-        console.log(result);
-        document.getElementById('result').innerText = result;
-        listData(); // Refresh the list after deletion
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('result').innerText = 'Error deleting data';
-      });
-    }
-
-    function listData() {
-      fetch('/list')
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
-          const listResultDiv = document.getElementById('listResult');
-          listResultDiv.innerHTML = '<h2>All Form Details</h2>';
-
-          if (data.length === 0) {
-            listResultDiv.innerHTML += '<p>No data available.</p>';
-          } else {
-            data.forEach(row => {
-              listResultDiv.innerHTML += `
-                <div class="list-item">
-                  <div>
-                    <strong>Name:</strong> ${row.name}, 
-                    <strong>Address:</strong> ${row.address}, 
-                    <strong>Phone:</strong> ${row.phone}
-                  </div>
-                  <button type="button" onclick="deleteData('${row.name}')">Delete</button>
-                </div>`;
-            });
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          document.getElementById('listResult').innerText = 'Error fetching data';
+      if (data.length === 0) {
+        listResultDiv.innerHTML += '<p>No data available.</p>';
+      } else {
+        data.forEach(row => {
+          listResultDiv.innerHTML += `
+            <div class="list-item">
+              <div>
+                <strong>Name:</strong> ${row.name}, 
+                <strong>Address:</strong> ${row.address}, 
+                <strong>Phone:</strong> ${row.phone}
+              </div>
+              <button type="button" onclick="editData(${row.id}, '${row.name}', '${row.address}', '${row.phone}')">Edit</button>
+              <button type="button" onclick="deleteData(${row.id})">Delete</button>
+            </div>`;
         });
-    }
-  </script>
-</body>
-</html>
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('listResult').innerText = 'Error fetching data';
+    });
+  }
+</script>
